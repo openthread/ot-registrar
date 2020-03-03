@@ -1,0 +1,13 @@
+/*
+ * The attributes config file for registrar, attributes listed
+ * below will be sent back to pledge as the response of CSR attributes request.
+ * All keys are represented as OID string, learn from http://www.oid-info.com/
+ */
+
+[
+    // Attribute<ecPublicKey, prime256v1>
+    {"1.2.840.10045.2.1" : "1.2.840.10045.3.1.7"},
+
+    // OID<ecdsa-with-SHA256>
+    "1.2.840.10045.4.3.2"
+]
