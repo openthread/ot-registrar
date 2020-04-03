@@ -44,4 +44,4 @@ sudo docker run -dt --privileged \
     --network $NETWORK --ip6 $IP6_ADDR \
     --sysctl 'net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1' \
     -v $ROOT_DIR:/home/ot-registrar \
-    ubuntu:java8-registrar
+    ubuntu:ot-registrar
