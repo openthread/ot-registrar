@@ -141,6 +141,34 @@ public class Registrar extends CoapServer {
     return domainCA.getDomainName();
   }
 
+  public final class VoucherStatusResource extends CoapResource {
+    public VoucherStatusResource() {
+      super(Constants.VOUCHER_STATUS);
+    }
+
+    @Override
+    public void handlePOST(CoapExchange exchange) {
+      try {
+        int contentFormat = exchange.getRequestOptions().getContentFormat();
+        RequestDumper.dump(logger, getURI(), exchange.getRequestPayload());
+
+        if (contentFormat != ExtendedMediaTypeRegistry.APPLICATION_CBOR) {
+          throw new Exception("unexpected content format for /vs: content-format=" + contentFormat);
+        }
+
+        CBORObject voucherStatus = CBORObject.DecodeFromBytes(exchange.getRequestPayload());
+        if (voucherStatus == null) {
+          throw new Exception("decoding CBOR payload failed for /vs");
+        }
+
+        logger.info("received voucher report: " + voucherStatus.toString());
+      } catch (Exception e) {
+        logger.warn("handle voucher status report failed: " + e.getMessage());
+        e.printStackTrace();
+      }
+    }
+  }
+
   public final class VoucherRequestResource extends CoapResource {
     public VoucherRequestResource() {
       super(Constants.REQUEST_VOUCHER);
@@ -480,6 +508,7 @@ public class Registrar extends CoapServer {
     CoapResource wellKnown = new CoapResource(".well-known");
     CoapResource est = new CoapResource("est");
     VoucherRequestResource rv = new VoucherRequestResource();
+    VoucherStatusResource vs = new VoucherStatusResource();
     CsrAttrsResource att = new CsrAttrsResource();
     EnrollResource enroll = new EnrollResource();
     ReenrollResource reenroll = new ReenrollResource();
@@ -488,6 +517,7 @@ public class Registrar extends CoapServer {
     est.add(enroll);
     est.add(reenroll);
     est.add(rv);
+    est.add(vs);
     est.add(att);
     wellKnown.add(est);
     this.add(wellKnown);

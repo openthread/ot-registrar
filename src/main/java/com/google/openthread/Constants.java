@@ -39,6 +39,8 @@ public class Constants {
 
   public static final String REQUEST_VOUCHER = "rv";
 
+  public static final String VOUCHER_STATUS = "vs";
+
   public static final String CSR_ATTRIBUTES = "att";
 
   public static final String SIMPLE_ENROLL = "sen";
