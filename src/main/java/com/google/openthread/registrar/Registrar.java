@@ -153,17 +153,49 @@ public class Registrar extends CoapServer {
         RequestDumper.dump(logger, getURI(), exchange.getRequestPayload());
 
         if (contentFormat != ExtendedMediaTypeRegistry.APPLICATION_CBOR) {
-          throw new Exception("unexpected content format for /vs: content-format=" + contentFormat);
+          throw new Exception(
+              "unexpected content format for voucher status report: content-format="
+                  + contentFormat);
         }
 
         CBORObject voucherStatus = CBORObject.DecodeFromBytes(exchange.getRequestPayload());
         if (voucherStatus == null) {
-          throw new Exception("decoding CBOR payload failed for /vs");
+          throw new Exception("decoding CBOR payload failed for voucher status report");
         }
 
-        logger.info("received voucher report: " + voucherStatus.toString());
+        logger.info("received voucher status report: " + voucherStatus.toString());
       } catch (Exception e) {
         logger.warn("handle voucher status report failed: " + e.getMessage());
+        e.printStackTrace();
+      }
+    }
+  }
+
+  public final class EnrollStatusResource extends CoapResource {
+    public EnrollStatusResource() {
+      super(Constants.ENROLL_STATUS);
+    }
+
+    @Override
+    public void handlePOST(CoapExchange exchange) {
+      try {
+        int contentFormat = exchange.getRequestOptions().getContentFormat();
+        RequestDumper.dump(logger, getURI(), exchange.getRequestPayload());
+
+        if (contentFormat != ExtendedMediaTypeRegistry.APPLICATION_CBOR) {
+          throw new Exception(
+              "unexpected content format for enroll status report: content-format="
+                  + contentFormat);
+        }
+
+        CBORObject enrollStatus = CBORObject.DecodeFromBytes(exchange.getRequestPayload());
+        if (enrollStatus == null) {
+          throw new Exception("decoding CBOR payload failed for enroll status report");
+        }
+
+        logger.info("received enroll status report: " + enrollStatus.toString());
+      } catch (Exception e) {
+        logger.warn("handle enroll status report failed: " + e.getMessage());
         e.printStackTrace();
       }
     }
@@ -509,6 +541,7 @@ public class Registrar extends CoapServer {
     CoapResource est = new CoapResource("est");
     VoucherRequestResource rv = new VoucherRequestResource();
     VoucherStatusResource vs = new VoucherStatusResource();
+    EnrollStatusResource es = new EnrollStatusResource();
     CsrAttrsResource att = new CsrAttrsResource();
     EnrollResource enroll = new EnrollResource();
     ReenrollResource reenroll = new ReenrollResource();
@@ -518,6 +551,7 @@ public class Registrar extends CoapServer {
     est.add(reenroll);
     est.add(rv);
     est.add(vs);
+    est.add(es);
     est.add(att);
     wellKnown.add(est);
     this.add(wellKnown);

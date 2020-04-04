@@ -41,6 +41,8 @@ public class Constants {
 
   public static final String VOUCHER_STATUS = "vs";
 
+  public static final String ENROLL_STATUS = "es";
+
   public static final String CSR_ATTRIBUTES = "att";
 
   public static final String SIMPLE_ENROLL = "sen";
