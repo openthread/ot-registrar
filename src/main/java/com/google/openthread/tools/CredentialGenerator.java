@@ -50,13 +50,12 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
+import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.OtherName;
-import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 public class CredentialGenerator {
@@ -75,7 +74,8 @@ public class CredentialGenerator {
 
   public static final String MASA_ALIAS = "masa";
   public static final String MASA_DNAME = DNAME_PREFIX + MASA_ALIAS;
-  public static final String MASA_URI = "coaps://[::1]:5685";
+  public static final String MASA_OID = "1.3.6.1.5.5.7.1.32";
+  public static final String MASA_URI = "localhost:5685";
 
   public static final String PLEDGE_ALIAS = "pledge";
   public static final String PLEDGE_SN = "OT-9527";
@@ -125,11 +125,19 @@ public class CredentialGenerator {
                 .getEncoded(ASN1Encoding.DER));
 
     // FIXME(wgtdkp): we are not sure if the method of accessdescription is id-ad-caIssuer
+    /*
     AuthorityInformationAccess aiaExt =
         new AuthorityInformationAccess(
             X509ObjectIdentifiers.id_ad_caIssuers, SecurityUtils.genMasaUri(masaUri));
     Extension masaUriExt =
         new Extension(Extension.authorityInfoAccess, false, aiaExt.getEncoded(ASN1Encoding.DER));
+        DERIA5String
+    */
+    Extension masaUriExt =
+        new Extension(
+            new ASN1ObjectIdentifier(Constants.MASA_URI_OID).intern(),
+            false,
+            new DERIA5String(MASA_URI).getEncoded());
 
     List<Extension> extensions = new ArrayList<>();
     extensions.add(keyUsage);

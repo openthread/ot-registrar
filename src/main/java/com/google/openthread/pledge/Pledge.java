@@ -348,6 +348,11 @@ public class Pledge extends CoapClient {
     logger.info("get operational certificate: " + subjectName);
 
     operationalCertificate = cert;
+
+    logger.info(
+        "operational certificate (PEM): \n" + SecurityUtils.toPEMFormat(operationalCertificate));
+    logger.info(
+        "operational private key (PEM): \n" + SecurityUtils.toPEMFormat(operationalKeyPair));
   }
 
   /**

@@ -69,7 +69,7 @@ public class Constants {
 
   public static final String KEY_STORE_FORMAT = "PKCS12";
 
-  public static final int CERT_VALIDITY = 365;
+  public static final long CERT_VALIDITY = 5 * 365; // In Days.
 
   public static final int DEFAULT_REGISTRAR_COAPS_PORT = 5684;
 
