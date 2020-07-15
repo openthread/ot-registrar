@@ -74,7 +74,6 @@ public class CredentialGenerator {
 
   public static final String MASA_ALIAS = "masa";
   public static final String MASA_DNAME = DNAME_PREFIX + MASA_ALIAS;
-  public static final String MASA_OID = "1.3.6.1.5.5.7.1.32";
   public static final String MASA_URI = "localhost:5685";
 
   public static final String PLEDGE_ALIAS = "pledge";
@@ -124,7 +123,7 @@ public class CredentialGenerator {
             new GeneralNames(new GeneralName(GeneralName.otherName, otherName))
                 .getEncoded(ASN1Encoding.DER));
 
-    // FIXME(wgtdkp): we are not sure if the method of accessdescription is id-ad-caIssuer
+    // FIXME(wgtdkp): we are not sure if the method of access description is id-ad-caIssuer
     /*
     AuthorityInformationAccess aiaExt =
         new AuthorityInformationAccess(
