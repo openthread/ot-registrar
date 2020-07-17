@@ -63,6 +63,9 @@ public class Constants {
   // Temporary
   public static final String MASA_URI_OID = "1.3.6.1.5.5.7.1.32";
 
+  // In case the MASA URI is not specified, this value will be used.
+  public static final String DEFAULT_MASA_URI = "localhost:5685";
+
   public static final String HARDWARE_MODULE_NAME_OID = "1.3.6.1.5.5.7.8.4";
 
   public static final String PRIVATE_HARDWARE_TYPE_OID = "1.3.6.1.4.1.21335";

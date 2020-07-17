@@ -74,7 +74,6 @@ public class CredentialGenerator {
 
   public static final String MASA_ALIAS = "masa";
   public static final String MASA_DNAME = DNAME_PREFIX + MASA_ALIAS;
-  public static final String MASA_URI = "localhost:5685";
 
   public static final String PLEDGE_ALIAS = "pledge";
   public static final String PLEDGE_SN = "OT-9527";
@@ -94,8 +93,22 @@ public class CredentialGenerator {
   public KeyPair commissionerKeyPair;
   public X509Certificate commissionerCert;
 
+  private String masaUri = Constants.DEFAULT_MASA_URI;
+
+  public void SetMasaUri(String masaUri) {
+    this.masaUri = masaUri;
+  }
+
   public X509Certificate genSelfSignedCert(KeyPair keyPair, String dname) throws Exception {
-    return SecurityUtils.genCertificate(keyPair, dname, keyPair, dname, true, null);
+    Extension keyUsage =
+        new Extension(
+            Extension.keyUsage,
+            true,
+            new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign)
+                .getEncoded());
+    List<Extension> extensions = new ArrayList<Extension>();
+    extensions.add(keyUsage);
+    return SecurityUtils.genCertificate(keyPair, dname, keyPair, dname, true, extensions);
   }
 
   public X509Certificate genPledgeCertificate(
@@ -123,20 +136,11 @@ public class CredentialGenerator {
             new GeneralNames(new GeneralName(GeneralName.otherName, otherName))
                 .getEncoded(ASN1Encoding.DER));
 
-    // FIXME(wgtdkp): we are not sure if the method of access description is id-ad-caIssuer
-    /*
-    AuthorityInformationAccess aiaExt =
-        new AuthorityInformationAccess(
-            X509ObjectIdentifiers.id_ad_caIssuers, SecurityUtils.genMasaUri(masaUri));
-    Extension masaUriExt =
-        new Extension(Extension.authorityInfoAccess, false, aiaExt.getEncoded(ASN1Encoding.DER));
-        DERIA5String
-    */
     Extension masaUriExt =
         new Extension(
             new ASN1ObjectIdentifier(Constants.MASA_URI_OID).intern(),
             false,
-            new DERIA5String(MASA_URI).getEncoded());
+            new DERIA5String(masaUri).getEncoded());
 
     List<Extension> extensions = new ArrayList<>();
     extensions.add(keyUsage);
@@ -171,7 +175,7 @@ public class CredentialGenerator {
             masaKeyPair,
             masaCert.getSubjectX500Principal().getName(),
             hwModuleName,
-            MASA_URI);
+            masaUri);
 
     if (caCertKeyFiles != null) {
       try (Reader reader = new FileReader(caCertKeyFiles[0])) {
@@ -279,7 +283,7 @@ public class CredentialGenerator {
 
   public static void main(String[] args) {
     final String HELP_FORMAT =
-        "CredentialGenerator [-c <domain-ca-cert> <domain-ca-key>] [-m <masa-ca-cert> <masa-ca-key>] -o <output-file>";
+        "CredentialGenerator [-c <domain-ca-cert> <domain-ca-key>] [-m <masa-ca-cert> <masa-ca-key>] [-u <masa-uri>] -o <output-file>";
 
     HelpFormatter helper = new HelpFormatter();
     Options options = new Options();
@@ -315,6 +319,13 @@ public class CredentialGenerator {
             .build();
     masaOpt.setArgs(2);
 
+    Option masaUriOpt =
+        Option.builder("u")
+            .longOpt("masauri")
+            .hasArg()
+            .desc("MASA URI in pledge certificate")
+            .build();
+
     Option helpOpt =
         Option.builder("h").longOpt("help").hasArg(false).desc("print this message").build();
 
@@ -323,7 +334,8 @@ public class CredentialGenerator {
         .addOption(helpOpt)
         .addOption(dumpOpt)
         .addOption(caOpt)
-        .addOption(masaOpt);
+        .addOption(masaOpt)
+        .addOption(masaUriOpt);
 
     try {
       CommandLineParser parser = new DefaultParser();
@@ -338,6 +350,9 @@ public class CredentialGenerator {
       if (keyStoreFile == null) {
         throw new IllegalArgumentException("need to specify keystore file!");
       }
+
+      String masaUri = cmd.getOptionValue('u');
+      if (masaUri != null) {}
 
       CredentialGenerator cg = new CredentialGenerator();
       cg.make(cmd.getOptionValues("c"), cmd.getOptionValues("m"));

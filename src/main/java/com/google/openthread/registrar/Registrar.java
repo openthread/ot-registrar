@@ -88,11 +88,6 @@ public class Registrar extends CoapServer {
     BouncyCastleInitializer.init();
   }
 
-  // FIXME(wgtdkp): this is just hard coded walkaroud for pledges that include
-  // no masa uri in its manufacturer device certificate. We should config this
-  // in command line or config file
-  public static final String DEFAULT_MASA_URI = "localhost:5685";
-
   /**
    * Constructing registrar with credentials and listening port.
    *
@@ -325,8 +320,8 @@ public class Registrar extends CoapServer {
         if (uri == null) {
           logger.warn(
               "pledge certificate does not include MASA uri, using default masa uri: "
-                  + DEFAULT_MASA_URI);
-          uri = DEFAULT_MASA_URI;
+                  + Constants.DEFAULT_MASA_URI);
+          uri = Constants.DEFAULT_MASA_URI;
         }
 
         uri = "coaps://" + uri;

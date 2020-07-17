@@ -128,7 +128,7 @@ public class CredentialsTest {
             KEY_STORE_FILE, CredentialGenerator.PLEDGE_ALIAS, CredentialGenerator.PASSWORD);
 
     Assert.assertTrue(
-        SecurityUtils.getMasaUri(pledgeCred.getCertificate()).equals(CredentialGenerator.MASA_URI));
+        SecurityUtils.getMasaUri(pledgeCred.getCertificate()).equals(Constants.DEFAULT_MASA_URI));
     Assert.assertTrue(pledgeCred.getCertificateChain().length == 2);
 
     pledgeCred.getCertificate().verify(masaCred.getCertificate().getPublicKey());
