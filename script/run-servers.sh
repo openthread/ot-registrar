@@ -44,7 +44,7 @@ readonly MASA_PORT=5685
 readonly JAR_FILE=./target/ot-registrar-0.1-SNAPSHOT-jar-with-dependencies.jar
 
 #readonly CREDENTIAL=credentials/threadgroup-5f9d307c.p12
-readonly CREDENTIAL=IOP14/test_credentials.p12
+readonly CREDENTIAL=credentials/local-masa/test_credentials.p12
 
 rm -rf $LOGS
 mkdir -p $LOGS
