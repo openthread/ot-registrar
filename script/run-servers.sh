@@ -29,7 +29,7 @@
 
 set -e
 
-readonly DOMAIN_NAME=Thread
+readonly DOMAIN_NAME=TestDomainTCE
 
 readonly TIMESTAMP=$(date "+%Y-%m-%d-%H:%M:%S")
 readonly LOGS=logs/${TIMESTAMP}
