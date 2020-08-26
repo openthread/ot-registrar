@@ -40,6 +40,7 @@ readonly MASA_LOG=${LOGS}/masa.log
 readonly TRI_PORT=5683
 readonly REGISTRAR_PORT=5684
 readonly MASA_PORT=5685
+readonly BORDER_AGENT_PORT=61631
 
 readonly JAR_FILE=./target/ot-registrar-0.1-SNAPSHOT-jar-with-dependencies.jar
 
@@ -50,7 +51,7 @@ rm -rf $LOGS
 mkdir -p $LOGS
 
 echo "starting tri, port=${TRI_PORT}, log=${TRI_LOG}..."
-java -jar tri/TRIserver.jar [::1] $REGISTRAR_PORT \
+java -jar tri/TRIserver.jar [::1] $REGISTRAR_PORT $BORDER_AGENT_PORT -dyntx \
     >> $TRI_LOG 2>&1 &
 
 echo "starting registrar server, port=${REGISTRAR_PORT}, log=${REGISTRAR_LOG}..."
