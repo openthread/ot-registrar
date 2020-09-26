@@ -162,6 +162,8 @@ public class Registrar extends CoapServer {
       } catch (Exception e) {
         logger.warn("handle voucher status report failed: " + e.getMessage());
         e.printStackTrace();
+      } finally {
+        exchange.respond(ResponseCode.CHANGED);
       }
     }
   }
@@ -192,6 +194,8 @@ public class Registrar extends CoapServer {
       } catch (Exception e) {
         logger.warn("handle enroll status report failed: " + e.getMessage());
         e.printStackTrace();
+      } finally {
+        exchange.respond(ResponseCode.CHANGED);
       }
     }
   }
