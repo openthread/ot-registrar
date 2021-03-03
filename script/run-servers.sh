@@ -31,7 +31,7 @@ set -e
 
 readonly DOMAIN_NAME=TestDomainTCE
 
-readonly TIMESTAMP=$(date "+%Y-%m-%d-%H:%M:%S")
+readonly TIMESTAMP=$(date "+%Y-%m-%d-%H.%M.%S")
 readonly LOGS=logs/${TIMESTAMP}
 readonly TRI_LOG=${LOGS}/tri.log
 readonly REGISTRAR_LOG=${LOGS}/registrar.log
@@ -40,9 +40,11 @@ readonly MASA_LOG=${LOGS}/masa.log
 readonly TRI_PORT=5683
 readonly REGISTRAR_PORT=5684
 readonly MASA_PORT=5685
-readonly BORDER_AGENT_PORT=61631
+#readonly BORDER_AGENT_PORT=61631
 
 readonly JAR_FILE=./target/ot-registrar-0.1-SNAPSHOT-jar-with-dependencies.jar
+# prebuilt TRI v1.2 server from the tce-registrar-java BitBucket repo
+readonly JAR_TRI=./script/TRIserver.jar
 
 #readonly CREDENTIAL=credentials/threadgroup-5f9d307c.p12
 readonly CREDENTIAL=credentials/local-masa/test_credentials.p12
@@ -50,9 +52,9 @@ readonly CREDENTIAL=credentials/local-masa/test_credentials.p12
 rm -rf $LOGS
 mkdir -p $LOGS
 
-echo "starting tri, port=${TRI_PORT}, log=${TRI_LOG}..."
-java -jar tri/TRIserver.jar [::1] $REGISTRAR_PORT $BORDER_AGENT_PORT -dyntx \
-    >> $TRI_LOG 2>&1 &
+echo "starting TRI, port=${TRI_PORT}, log=${TRI_LOG}..."
+java -jar $JAR_TRI [::1] $REGISTRAR_PORT -log $TRI_LOG >> /dev/null 2>&1 &
+exit
 
 echo "starting registrar server, port=${REGISTRAR_PORT}, log=${REGISTRAR_LOG}..."
 java -cp $JAR_FILE \
