@@ -270,7 +270,7 @@ public class Voucher {
           put(NONCE, get(VOUCHER_REQUEST) + 7);
           put(PINNED_DOMAIN_CERT, get(VOUCHER_REQUEST) + 8);
           put(PRIOR_SIGNED_VOUCHER_REQUEST, get(VOUCHER_REQUEST) + 9);
-          // put(PROXIMITY_REGISTRAR_CERT, get(VOUCHER_REQUEST) + 10);
+          put(PROXIMITY_REGISTRAR_CERT, get(VOUCHER_REQUEST) + 10);
           put(SHA256_REGISTRAR_SPKI, get(VOUCHER_REQUEST) + 11);
           put(PROXIMITY_REGISTRAR_SPKI, get(VOUCHER_REQUEST) + 12);
           put(SERIAL_NUMBER, get(VOUCHER_REQUEST) + 13);
