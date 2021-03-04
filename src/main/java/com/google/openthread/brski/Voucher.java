@@ -192,7 +192,7 @@ public class Voucher {
   public static final String PROXIMITY_REGISTRAR_CERT = "proximity-registrar-cert";
 
   public static final String SHA256_REGISTRAR_SPKI =
-      "mity-registrar-sha256-of-subject-public-key-info";
+      "proximity-registrar-sha256-of-subject-public-key-info";
 
   public static final String PROXIMITY_REGISTRAR_SPKI =
       "proximity-registrar-subject-public-key-info";
