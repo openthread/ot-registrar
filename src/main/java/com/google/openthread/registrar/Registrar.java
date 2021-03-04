@@ -28,6 +28,11 @@
 
 package com.google.openthread.registrar;
 
+import COSE.CoseException;
+import COSE.Message;
+import COSE.MessageTag;
+import COSE.OneKey;
+import COSE.Sign1Message;
 import com.google.openthread.BouncyCastleInitializer;
 import com.google.openthread.Constants;
 import com.google.openthread.ExtendedMediaTypeRegistry;
@@ -83,11 +88,6 @@ public class Registrar extends CoapServer {
     BouncyCastleInitializer.init();
   }
 
-  // FIXME(wgtdkp): this is just hard coded walkaroud for pledges that include
-  // no masa uri in its manufacturer device certificate. We should config this
-  // in command line or config file
-  public static final String DEFAULT_MASA_URI = "coaps://[::1]:5685";
-
   /**
    * Constructing registrar with credentials and listening port.
    *
@@ -136,6 +136,70 @@ public class Registrar extends CoapServer {
     return domainCA.getDomainName();
   }
 
+  public final class VoucherStatusResource extends CoapResource {
+    public VoucherStatusResource() {
+      super(Constants.VOUCHER_STATUS);
+    }
+
+    @Override
+    public void handlePOST(CoapExchange exchange) {
+      try {
+        int contentFormat = exchange.getRequestOptions().getContentFormat();
+        RequestDumper.dump(logger, getURI(), exchange.getRequestPayload());
+
+        if (contentFormat != ExtendedMediaTypeRegistry.APPLICATION_CBOR) {
+          throw new Exception(
+              "unexpected content format for voucher status report: content-format="
+                  + contentFormat);
+        }
+
+        CBORObject voucherStatus = CBORObject.DecodeFromBytes(exchange.getRequestPayload());
+        if (voucherStatus == null) {
+          throw new Exception("decoding CBOR payload failed for voucher status report");
+        }
+
+        logger.info("received voucher status report: " + voucherStatus.toString());
+      } catch (Exception e) {
+        logger.warn("handle voucher status report failed: " + e.getMessage());
+        e.printStackTrace();
+      } finally {
+        exchange.respond(ResponseCode.CHANGED);
+      }
+    }
+  }
+
+  public final class EnrollStatusResource extends CoapResource {
+    public EnrollStatusResource() {
+      super(Constants.ENROLL_STATUS);
+    }
+
+    @Override
+    public void handlePOST(CoapExchange exchange) {
+      try {
+        int contentFormat = exchange.getRequestOptions().getContentFormat();
+        RequestDumper.dump(logger, getURI(), exchange.getRequestPayload());
+
+        if (contentFormat != ExtendedMediaTypeRegistry.APPLICATION_CBOR) {
+          throw new Exception(
+              "unexpected content format for enroll status report: content-format="
+                  + contentFormat);
+        }
+
+        CBORObject enrollStatus = CBORObject.DecodeFromBytes(exchange.getRequestPayload());
+        if (enrollStatus == null) {
+          throw new Exception("decoding CBOR payload failed for enroll status report");
+        }
+
+        logger.info("received enroll status report: " + enrollStatus.toString());
+      } catch (Exception e) {
+        logger.warn("handle enroll status report failed: " + e.getMessage());
+        e.printStackTrace();
+      } finally {
+        exchange.respond(ResponseCode.CHANGED);
+      }
+    }
+  }
+
   public final class VoucherRequestResource extends CoapResource {
     public VoucherRequestResource() {
       super(Constants.REQUEST_VOUCHER);
@@ -146,140 +210,154 @@ public class Registrar extends CoapServer {
       int contentFormat = exchange.getRequestOptions().getContentFormat();
 
       try {
-        if (contentFormat == ExtendedMediaTypeRegistry.APPLICATION_CBOR) {
-          RequestDumper.dump(logger, getURI(), exchange.getRequestPayload());
+        RequestDumper.dump(logger, getURI(), exchange.getRequestPayload());
 
-          // Validate pledge's voucher request
-          ConstrainedVoucherRequest pledgeReq =
+        // Get client certificate, it is pledge's idevid for voucher request
+        Principal clientId = exchange.advanced().getRequest().getSourceContext().getPeerIdentity();
+        if (!(clientId instanceof X509CertPath)) {
+          logger.error("unsupported client identity");
+          exchange.respond(ResponseCode.UNPROCESSABLE_ENTITY);
+          return;
+        }
+        X509Certificate idevid = ((X509CertPath) clientId).getTarget();
+
+        ConstrainedVoucherRequest pledgeReq = null;
+
+        if (contentFormat == ExtendedMediaTypeRegistry.APPLICATION_COSE_SIGN1) {
+          // Verify signature
+          Sign1Message sign1Msg =
+              (Sign1Message)
+                  Message.DecodeFromBytes(exchange.getRequestPayload(), MessageTag.Sign1);
+          if (!sign1Msg.validate(new OneKey(idevid.getPublicKey(), null))) {
+            throw new CoseException("COSE-sign1 voucher validation failed");
+          }
+
+          // 2.1 verify the voucher
+          pledgeReq =
+              (ConstrainedVoucherRequest) new CBORSerializer().deserialize(sign1Msg.GetContent());
+        } else if (contentFormat == ExtendedMediaTypeRegistry.APPLICATION_CBOR) {
+          pledgeReq =
               (ConstrainedVoucherRequest)
                   new CBORSerializer().deserialize(exchange.getRequestPayload());
-          if (!pledgeReq.validate()) {
-            logger.error("bad voucher request");
-            exchange.respond(ResponseCode.UNPROCESSABLE_ENTITY);
-            return;
-          }
-
-          // Get client certificate, it is pledge's idevid for voucher request
-          Principal clientId =
-              exchange.advanced().getRequest().getSourceContext().getPeerIdentity();
-          if (!(clientId instanceof X509CertPath)) {
-            logger.error("unsupported client identity");
-            exchange.respond(ResponseCode.UNPROCESSABLE_ENTITY);
-            return;
-          }
-          X509Certificate idevid = ((X509CertPath) clientId).getTarget();
-
-          // Constructing new voucher request for MASA
-          // ref: section 5.5 BRSKI
-          ConstrainedVoucherRequest req = new ConstrainedVoucherRequest();
-          req.assertion = pledgeReq.assertion;
-
-          // Optional, but mandatory for Thread 1.2
-          req.nonce = pledgeReq.nonce;
-
-          // Optional, could be null.
-          if (pledgeReq.proximityRegistrarSPKI != null) {
-            if (!Arrays.equals(
-                pledgeReq.proximityRegistrarSPKI, getCertificate().getPublicKey().getEncoded())) {
-              logger.error("unmatched proximity registrar SPKI");
-              exchange.respond(ResponseCode.BAD_REQUEST);
-              return;
-            }
-          }
-
-          req.proximityRegistrarSPKI = pledgeReq.proximityRegistrarSPKI;
-
-          // Optional
-          req.createdOn = new Date();
-
-          // serialNumber provided by pledge's voucher request must match the one
-          // extracted from pledge's idevid.
-          req.serialNumber = Pledge.getSerialNumber(idevid);
-          if (req.serialNumber == null || !req.serialNumber.equals(pledgeReq.serialNumber)) {
-            logger.error(
-                String.format(
-                    "bad serial number in voucher request: [%s] != [%s]",
-                    pledgeReq.serialNumber, req.serialNumber));
-            exchange.respond(ResponseCode.UNPROCESSABLE_ENTITY);
-            return;
-          }
-
-          // Optional, could be null. Settting idevid-issuer as
-          // authority key identifier of pledge certificate.
-          // But not optional for OpenThread.
-          req.idevidIssuer = SecurityUtils.getAuthorityKeyId(idevid);
-          if (req.idevidIssuer != null) {
-            logger.info(
-                String.format(
-                    "idevid-issuer in voucher request [len=%d, %s]",
-                    req.idevidIssuer.length, Hex.toHexString(req.idevidIssuer)));
-          } else {
-            logger.error("missing idevid-issuer in voucher request");
-          }
-
-          // prior-signed-voucher-request for COSE-signed voucher request
-
-          // Create CMS-cbor voucher request
-          byte[] content = new CBORSerializer().serialize(req);
-          byte[] payload;
-          try {
-            payload =
-                SecurityUtils.genCMSSignedMessage(
-                    privateKey,
-                    getCertificate(),
-                    SecurityUtils.SIGNATURE_ALGORITHM,
-                    certificateChain,
-                    content);
-          } catch (Exception e) {
-            logger.warn("CMS signing voucher request failed: " + e.getMessage());
-            e.printStackTrace();
-            exchange.respond(ResponseCode.SERVICE_UNAVAILABLE);
-            return;
-          }
-
-          // Request voucher from MASA server
-          String uri = SecurityUtils.getMasaUri(idevid);
-          if (uri == null) {
-            logger.warn(
-                "pledge certificate does not include MASA uri, using default masa uri: "
-                    + DEFAULT_MASA_URI);
-            uri = DEFAULT_MASA_URI;
-          }
-
-          MASAConnector masaClient = new MASAConnector(masaTrustAnchors);
-          CoapResponse response = masaClient.requestVoucher(payload, uri);
-
-          if (response == null || response.getCode() != ResponseCode.CHANGED) {
-            logger.warn("request voucher from MASA failed");
-            exchange.respond(ResponseCode.SERVICE_UNAVAILABLE);
-            return;
-          }
-
-          if (response.getOptions().getContentFormat()
-              != ExtendedMediaTypeRegistry.APPLICATION_VOUCHER_COSE_CBOR) {
-            // TODO(wgtdkp): we can support more formats
-            logger.error(
-                "Not supported content format: " + response.getOptions().getContentFormat());
-            exchange.respond(ResponseCode.SERVICE_UNAVAILABLE);
-            return;
-          }
-
-          if (response.getPayload() == null) {
-            logger.warn("unexpected null payload from MASA server");
-            exchange.respond(ResponseCode.SERVICE_UNAVAILABLE);
-            return;
-          }
-
-          // Registrar forwards MASA's response without modification
-          exchange.respond(
-              response.getCode(),
-              response.getPayload(),
-              ExtendedMediaTypeRegistry.APPLICATION_VOUCHER_COSE_CBOR);
         } else {
-          // TODO(wgtdkp): handle a singed voucher request
           logger.error("unsupported voucher request format: " + contentFormat);
           exchange.respond(ResponseCode.UNSUPPORTED_CONTENT_FORMAT);
         }
+
+        // Validate pledge's voucher request
+        if (!pledgeReq.validate()) {
+          logger.error("bad voucher request");
+          exchange.respond(ResponseCode.UNPROCESSABLE_ENTITY);
+          return;
+        }
+
+        // Constructing new voucher request for MASA
+        // ref: section 5.5 BRSKI
+        ConstrainedVoucherRequest req = new ConstrainedVoucherRequest();
+        req.assertion = pledgeReq.assertion;
+
+        // Optional, but mandatory for Thread 1.2
+        req.nonce = pledgeReq.nonce;
+
+        // Optional, could be null.
+        if (pledgeReq.proximityRegistrarSPKI != null) {
+          if (!Arrays.equals(
+              pledgeReq.proximityRegistrarSPKI, getCertificate().getPublicKey().getEncoded())) {
+            logger.error("unmatched proximity registrar SPKI");
+            exchange.respond(ResponseCode.BAD_REQUEST);
+            return;
+          }
+        }
+
+        req.proximityRegistrarSPKI = pledgeReq.proximityRegistrarSPKI;
+
+        // Optional
+        req.createdOn = new Date();
+
+        // serialNumber provided by pledge's voucher request must match the one
+        // extracted from pledge's idevid.
+        req.serialNumber = Pledge.getSerialNumber(idevid);
+        if (req.serialNumber == null || !req.serialNumber.equals(pledgeReq.serialNumber)) {
+          logger.error(
+              String.format(
+                  "bad serial number in voucher request: [%s] != [%s]",
+                  pledgeReq.serialNumber, req.serialNumber));
+          exchange.respond(ResponseCode.UNPROCESSABLE_ENTITY);
+          return;
+        }
+
+        // Optional, could be null. Settting idevid-issuer as
+        // authority key identifier of pledge certificate.
+        // But not optional for OpenThread.
+        req.idevidIssuer = SecurityUtils.getAuthorityKeyId(idevid);
+        if (req.idevidIssuer != null) {
+          logger.info(
+              String.format(
+                  "idevid-issuer in voucher request [len=%d, %s]",
+                  req.idevidIssuer.length, Hex.toHexString(req.idevidIssuer)));
+        } else {
+          logger.error("missing idevid-issuer in voucher request");
+        }
+
+        // prior-signed-voucher-request for COSE-signed voucher request
+
+        // Create CMS-cbor voucher request
+        byte[] content = new CBORSerializer().serialize(req);
+        byte[] payload;
+        try {
+          payload =
+              SecurityUtils.genCMSSignedMessage(
+                  privateKey,
+                  getCertificate(),
+                  SecurityUtils.SIGNATURE_ALGORITHM,
+                  certificateChain,
+                  content);
+        } catch (Exception e) {
+          logger.warn("CMS signing voucher request failed: " + e.getMessage());
+          e.printStackTrace();
+          exchange.respond(ResponseCode.SERVICE_UNAVAILABLE);
+          return;
+        }
+
+        // Request voucher from MASA server
+        String uri = SecurityUtils.getMasaUri(idevid);
+        if (uri == null) {
+          logger.warn(
+              "pledge certificate does not include MASA uri, using default masa uri: "
+                  + Constants.DEFAULT_MASA_URI);
+          uri = Constants.DEFAULT_MASA_URI;
+        }
+
+        uri = "coaps://" + uri;
+
+        MASAConnector masaClient = new MASAConnector(masaTrustAnchors);
+        CoapResponse response = masaClient.requestVoucher(payload, uri);
+
+        if (response == null || response.getCode() != ResponseCode.CHANGED) {
+          logger.warn("request voucher from MASA failed");
+          exchange.respond(ResponseCode.SERVICE_UNAVAILABLE);
+          return;
+        }
+
+        if (response.getOptions().getContentFormat()
+            != ExtendedMediaTypeRegistry.APPLICATION_VOUCHER_COSE_CBOR) {
+          // TODO(wgtdkp): we can support more formats
+          logger.error("Not supported content format: " + response.getOptions().getContentFormat());
+          exchange.respond(ResponseCode.SERVICE_UNAVAILABLE);
+          return;
+        }
+
+        if (response.getPayload() == null) {
+          logger.warn("unexpected null payload from MASA server");
+          exchange.respond(ResponseCode.SERVICE_UNAVAILABLE);
+          return;
+        }
+
+        // Registrar forwards MASA's response without modification
+        exchange.respond(
+            response.getCode(),
+            response.getPayload(),
+            ExtendedMediaTypeRegistry.APPLICATION_VOUCHER_COSE_CBOR);
       } catch (Exception e) {
         logger.warn("handle voucher request failed: " + e.getMessage());
         e.printStackTrace();
@@ -463,6 +541,8 @@ public class Registrar extends CoapServer {
     CoapResource wellKnown = new CoapResource(".well-known");
     CoapResource est = new CoapResource("est");
     VoucherRequestResource rv = new VoucherRequestResource();
+    VoucherStatusResource vs = new VoucherStatusResource();
+    EnrollStatusResource es = new EnrollStatusResource();
     CsrAttrsResource att = new CsrAttrsResource();
     EnrollResource enroll = new EnrollResource();
     ReenrollResource reenroll = new ReenrollResource();
@@ -471,6 +551,8 @@ public class Registrar extends CoapServer {
     est.add(enroll);
     est.add(reenroll);
     est.add(rv);
+    est.add(vs);
+    est.add(es);
     est.add(att);
     wellKnown.add(est);
     this.add(wellKnown);

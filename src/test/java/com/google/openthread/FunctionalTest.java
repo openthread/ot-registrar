@@ -184,7 +184,7 @@ public class FunctionalTest {
 
   @Test
   public void testPledgeCertificate() {
-    Assert.assertTrue(SecurityUtils.getMasaUri(pledgeCert).equals(CredentialGenerator.MASA_URI));
+    Assert.assertTrue(SecurityUtils.getMasaUri(pledgeCert).equals(Constants.DEFAULT_MASA_URI));
   }
 
   @Test

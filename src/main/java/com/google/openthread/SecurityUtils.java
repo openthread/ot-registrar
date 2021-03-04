@@ -57,6 +57,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DERIA5String;
@@ -66,7 +67,6 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
@@ -186,12 +186,11 @@ public class SecurityUtils {
   public static String getMasaUri(X509Certificate cert) {
     try {
       X509CertificateHolder holder = new JcaX509CertificateHolder(cert);
-      AuthorityInformationAccess aia =
-          AuthorityInformationAccess.fromExtensions(holder.getExtensions());
-      if (aia == null || aia.getAccessDescriptions().length == 0) {
-        return null;
-      }
-      return getMasaUri(aia.getAccessDescriptions()[0].getAccessLocation());
+      Extension masaUri = holder.getExtension(new ASN1ObjectIdentifier(Constants.MASA_URI_OID));
+      return DERIA5String.fromByteArray(masaUri.getExtnValue().getOctets()).toString();
+    } catch (IOException e) {
+      e.printStackTrace();
+      return null;
     } catch (CertificateEncodingException e) {
       e.printStackTrace();
       return null;

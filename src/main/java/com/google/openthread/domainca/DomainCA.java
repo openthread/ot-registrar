@@ -107,6 +107,9 @@ public class DomainCA {
         new X509v3CertificateBuilder(
             issuer, serial, notBefore, notAfter, csr.getSubject(), csr.getSubjectPublicKeyInfo());
 
+    logger.info("operational certificate not-before: " + notBefore.toString());
+    logger.info("operational certificate not-after: " + notAfter.toString());
+
     // As defined in 4.2.1.2 of RFC 5280, authority key identifier (subject key identifier of CA)
     // must be calculated by SHA1.
     X509ExtensionUtils extUtils = new BcX509ExtensionUtils();

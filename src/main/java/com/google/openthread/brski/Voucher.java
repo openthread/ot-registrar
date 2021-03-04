@@ -183,20 +183,25 @@ public class Voucher {
 
   public static final String PINNED_DOMAIN_CERT = "pinned-domain-cert";
 
+  public static final String PINNED_SHA256_DOMAIN_SPKI = "pinned-sha256-of-subject-public-key-info";
+
   public static final String PINNED_DOMAIN_SPKI = "pinned-domain-subject-public-key-info";
 
   public static final String PRIOR_SIGNED_VOUCHER_REQUEST = "prior-signed-voucher-request";
 
   public static final String PROXIMITY_REGISTRAR_CERT = "proximity-registrar-cert";
 
+  public static final String SHA256_REGISTRAR_SPKI =
+      "proximity-registrar-sha256-of-subject-public-key-info";
+
   public static final String PROXIMITY_REGISTRAR_SPKI =
       "proximity-registrar-subject-public-key-info";
 
   public static final String SERIAL_NUMBER = "serial-number";
 
-  public static final int VOUCHER_SID = 1001100; // 1001104;
+  public static final int VOUCHER_SID = 2451; // 1001104;
 
-  public static final int VOUCHER_REQUEST_SID = 1001150; // 1001154;
+  public static final int VOUCHER_REQUEST_SID = 2501; // 1001154;
 
   public boolean validate() {
     if (assertion == null
@@ -256,18 +261,19 @@ public class Voucher {
       new HashMap<String, Integer>() {
         {
           put(VOUCHER_REQUEST, VOUCHER_REQUEST_SID);
-          put(ASSERTION, get(VOUCHER_REQUEST) + 1 + 4);
-          put(CREATED_ON, get(VOUCHER_REQUEST) + 2 + 4);
-          put(DOMAIN_CERT_REVOCATION_CHECKS, get(VOUCHER_REQUEST) + 3 + 4);
-          put(EXPIRES_ON, get(VOUCHER_REQUEST) + 4 + 4);
-          put(IDEVID_ISSUER, get(VOUCHER_REQUEST) + 5 + 4);
-          put(LAST_RENEWAL_DATE, get(VOUCHER_REQUEST) + 6 + 4);
-          put(NONCE, get(VOUCHER_REQUEST) + 7 + 4);
-          put(PINNED_DOMAIN_CERT, get(VOUCHER_REQUEST) + 8 + 4);
-          put(PRIOR_SIGNED_VOUCHER_REQUEST, get(VOUCHER_REQUEST) + 9 + 4);
-          // put(PROXIMITY_REGISTRAR_CERT, get(VOUCHER_REQUEST) + 10 + 4);
-          put(PROXIMITY_REGISTRAR_SPKI, get(VOUCHER_REQUEST) + 11 + 21);
-          put(SERIAL_NUMBER, get(VOUCHER_REQUEST) + 12 + 2);
+          put(ASSERTION, get(VOUCHER_REQUEST) + 1);
+          put(CREATED_ON, get(VOUCHER_REQUEST) + 2);
+          put(DOMAIN_CERT_REVOCATION_CHECKS, get(VOUCHER_REQUEST) + 3);
+          put(EXPIRES_ON, get(VOUCHER_REQUEST) + 4);
+          put(IDEVID_ISSUER, get(VOUCHER_REQUEST) + 5);
+          put(LAST_RENEWAL_DATE, get(VOUCHER_REQUEST) + 6);
+          put(NONCE, get(VOUCHER_REQUEST) + 7);
+          put(PINNED_DOMAIN_CERT, get(VOUCHER_REQUEST) + 8);
+          put(PRIOR_SIGNED_VOUCHER_REQUEST, get(VOUCHER_REQUEST) + 9);
+          put(PROXIMITY_REGISTRAR_CERT, get(VOUCHER_REQUEST) + 10);
+          put(SHA256_REGISTRAR_SPKI, get(VOUCHER_REQUEST) + 11);
+          put(PROXIMITY_REGISTRAR_SPKI, get(VOUCHER_REQUEST) + 12);
+          put(SERIAL_NUMBER, get(VOUCHER_REQUEST) + 13);
         }
       };
 
@@ -275,16 +281,17 @@ public class Voucher {
       new HashMap<String, Integer>() {
         {
           put(VOUCHER, VOUCHER_SID);
-          put(ASSERTION, get(VOUCHER) + 1 + 4);
-          put(CREATED_ON, get(VOUCHER) + 2 + 4);
-          put(DOMAIN_CERT_REVOCATION_CHECKS, get(VOUCHER) + 3 + 4);
-          put(EXPIRES_ON, get(VOUCHER) + 4 + 4);
-          put(IDEVID_ISSUER, get(VOUCHER) + 5 + 4);
-          put(LAST_RENEWAL_DATE, get(VOUCHER) + 6 + 4);
-          put(NONCE, get(VOUCHER) + 7 + 4);
-          put(PINNED_DOMAIN_CERT, get(VOUCHER) + 8 + 4);
-          put(PINNED_DOMAIN_SPKI, get(VOUCHER) + 9 + 4);
-          put(SERIAL_NUMBER, get(VOUCHER) + 10 + 4);
+          put(ASSERTION, get(VOUCHER) + 1);
+          put(CREATED_ON, get(VOUCHER) + 2);
+          put(DOMAIN_CERT_REVOCATION_CHECKS, get(VOUCHER) + 3);
+          put(EXPIRES_ON, get(VOUCHER) + 4);
+          put(IDEVID_ISSUER, get(VOUCHER) + 5);
+          put(LAST_RENEWAL_DATE, get(VOUCHER) + 6);
+          put(NONCE, get(VOUCHER) + 7);
+          put(PINNED_DOMAIN_CERT, get(VOUCHER) + 8);
+          put(PINNED_DOMAIN_SPKI, get(VOUCHER) + 9);
+          put(PINNED_SHA256_DOMAIN_SPKI, get(VOUCHER) + 10);
+          put(SERIAL_NUMBER, get(VOUCHER) + 11);
         }
       };
 
