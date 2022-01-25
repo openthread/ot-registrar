@@ -30,6 +30,7 @@ package com.google.openthread;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.slf4j.LoggerFactory;
 
 public class LoggerInitializer {
@@ -40,10 +41,10 @@ public class LoggerInitializer {
   public static void Init(boolean verbose) {
     if (verbose) {
       ((Logger) LoggerFactory.getLogger(CALIFORNIUM)).setLevel(Level.DEBUG);
-      org.apache.log4j.Logger.getLogger(OPENTHREAD).setLevel(org.apache.log4j.Level.DEBUG);
+      Configurator.setLevel(OPENTHREAD, org.apache.logging.log4j.Level.DEBUG);
     } else {
       ((Logger) LoggerFactory.getLogger(CALIFORNIUM)).setLevel(Level.INFO);
-      org.apache.log4j.Logger.getLogger(OPENTHREAD).setLevel(org.apache.log4j.Level.INFO);
+      Configurator.setLevel(OPENTHREAD, org.apache.logging.log4j.Level.INFO);
     }
   }
 }
