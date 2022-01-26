@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 #  Copyright (c) 2020, The OpenThread Registrar Authors.
 #  All rights reserved.
@@ -27,10 +26,27 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -e
+name: Build
 
-if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-    sudo /sbin/sysctl -w net.ipv6.conf.lo.disable_ipv6=0
-fi
+on: [push, pull_request]
 
-./script/bootstrap.sh
+jobs:
+
+  cancel-previous-runs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: rokroskar/workflow-run-cleanup-action@master
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        if: "github.ref != 'refs/heads/main'"
+
+  package-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Bootstrap
+        run: script/bootstrap.sh
+      - name: Package
+        run: mvn package -Dmaven.test.skip=true
+      - name: Test
+        run: mvn test
